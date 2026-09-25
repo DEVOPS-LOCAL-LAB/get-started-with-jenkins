@@ -1,9 +1,14 @@
 pipeline {
     agent any
+    
+	// NOTION 1 : Parametres dynamiques
+	parameters {
+		string(name: 'APP_PORT', defaultValue: '8082', description: 'Port sur  laquel deployer  l application')
+		string(name: 'APP_NAME', defaultValue: 'jenkins-demo-v2', description: "Nomdu container de deploiement")
+	}
 
     environment {
         IMAGE_NAME = 'jenkins-demo'
-        CONTAINER_NAME = 'jenkins-demo-app'
         TEST_CONTAINER_NAME = 'jenkins-demo-test'
     }
 
@@ -48,8 +53,10 @@ pipeline {
         stage('Deploiement') {
             steps {
                 sh '''
-                    docker rm -f ${CONTAINER_NAME} 2>/dev/null || true
-                    docker run -d --name ${CONTAINER_NAME} -p 8081:80 ${IMAGE_NAME}:${BUILD_NUMBER}
+					// Utilisation des variables params definies plus haut
+                    docker rm -f ${params.APP_NAME} 2>/dev/null || true
+                    docker run -d --name ${params.APP_NAME} -p ${params.APP_PORT}:80 ${IMAGE_NAME}:${BUILD_NUMBER}
+                    echo "Deploiement reussi sur le port ${params.APP_PORT}"
                 '''
             }
         }
