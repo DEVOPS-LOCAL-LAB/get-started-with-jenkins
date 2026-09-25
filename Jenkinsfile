@@ -1,17 +1,16 @@
 pipeline {
     agent any
     
-	// NOTION 1 : Parametres dynamiques
-	parameters {
-		string(name: 'APP_PORT', defaultValue: '8082', description: 'Port sur  laquel deployer  l application')
-		string(name: 'APP_NAME', defaultValue: 'jenkins-demo-v2', description: "Nomdu container de deploiement")
-	}
+    parameters {
+        string(name: 'APP_PORT', defaultValue: '8082', description: 'Port sur lequel deployer l application')
+        string(name: 'APP_NAME', defaultValue: 'jenkins-demo-v2', description: 'Nom du container de deploiement')
+    }
 
     environment {
         IMAGE_NAME = 'jenkins-demo'
         TEST_CONTAINER_NAME = 'jenkins-demo-test'
         
-        // mapper sh 
+        // MAPPING : On crée des variables SANS POINT pour que le Shell les comprenne
         DEPLOY_APP_NAME = "${params.APP_NAME}"
         DEPLOY_APP_PORT = "${params.APP_PORT}"
     }
@@ -47,8 +46,6 @@ pipeline {
                     docker rm -f ${TEST_CONTAINER_NAME} 2>/dev/null || true
                     docker run -d --name ${TEST_CONTAINER_NAME} ${IMAGE_NAME}:${BUILD_NUMBER}
                     sleep 3
-                    
-                    # grep lit directement le fichier, ce qui évite les erreurs de pipe avec sh -c dans Jenkins
                     docker exec ${TEST_CONTAINER_NAME} grep -q 'Application déployée par Jenkins' /usr/share/nginx/html/index.html
                 '''
             }
@@ -57,23 +54,22 @@ pipeline {
         stage('Deploiement') {
             steps {
                 sh '''
-					# Utilisation des variables params definies plus haut
-                    docker rm -f ${params.APP_NAME} 2>/dev/null || true
-                    docker run -d --name ${params.APP_NAME} -p ${params.APP_PORT}:80 ${IMAGE_NAME}:${BUILD_NUMBER}
+                    # ATTENTION : On utilise DEPLOY_APP_NAME et DEPLOY_APP_PORT, PAS params.xxx
+                    docker rm -f ${DEPLOY_APP_NAME} 2>/dev/null || true
+                    docker run -d --name ${DEPLOY_APP_NAME} -p ${DEPLOY_APP_PORT}:80 ${IMAGE_NAME}:${BUILD_NUMBER}
                     echo "Deploiement reussi sur le port ${DEPLOY_APP_PORT}"
                 '''
             }
         }
         
-        // Notion 2 : Netoyage des ressources pour eviter la saturation du disque
-        stage ('Netoyage') {
-			steps {
-				sh '''
-					echo "Supression des anciennes  images Docker non utilisees"
-					docker image prune -f
-					echo "Netoyage termine"
-				'''
-			}
+        stage('Nettoyage') {
+            steps {
+                sh '''
+                    echo "Suppression des anciennes images Docker non utilisees"
+                    docker image prune -f
+                    echo "Nettoyage termine"
+                '''
+            }
         }
     }
 
@@ -82,10 +78,10 @@ pipeline {
             sh 'docker rm -f ${TEST_CONTAINER_NAME} 2>/dev/null || true'
         }
         success {
-            echo 'Pipeline terminé avec succès'
+            echo 'Pipeline termine avec succes'
         }
         failure {
-            echo 'Le pipeline a échoué'
+            echo 'Le pipeline a echoue'
         }
     }
 }
