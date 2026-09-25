@@ -53,12 +53,23 @@ pipeline {
         stage('Deploiement') {
             steps {
                 sh '''
-					// Utilisation des variables params definies plus haut
+					# Utilisation des variables params definies plus haut
                     docker rm -f ${params.APP_NAME} 2>/dev/null || true
                     docker run -d --name ${params.APP_NAME} -p ${params.APP_PORT}:80 ${IMAGE_NAME}:${BUILD_NUMBER}
                     echo "Deploiement reussi sur le port ${params.APP_PORT}"
                 '''
             }
+        }
+        
+        // Notion 2 : Netoyage des ressources pour eviter la saturation du disque
+        stage ('Netoyage') {
+			steps {
+				sh '''
+					echo "Supression des anciennes  images Docker non utilisees"
+					docker image prune -f
+					echo "Netoyage termine"
+				'''
+			}
         }
     }
 
