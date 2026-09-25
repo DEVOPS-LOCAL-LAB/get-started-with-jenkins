@@ -10,6 +10,10 @@ pipeline {
     environment {
         IMAGE_NAME = 'jenkins-demo'
         TEST_CONTAINER_NAME = 'jenkins-demo-test'
+        
+        // mapper sh 
+        DEPLOY_APP_NAME = "${params.APP_NAME}"
+        DEPLOY_APP_PORT = "${params.APP_PORT}"
     }
 
     stages {
@@ -56,7 +60,7 @@ pipeline {
 					# Utilisation des variables params definies plus haut
                     docker rm -f ${params.APP_NAME} 2>/dev/null || true
                     docker run -d --name ${params.APP_NAME} -p ${params.APP_PORT}:80 ${IMAGE_NAME}:${BUILD_NUMBER}
-                    echo "Deploiement reussi sur le port ${params.APP_PORT}"
+                    echo "Deploiement reussi sur le port ${DEPLOY_APP_PORT}"
                 '''
             }
         }
